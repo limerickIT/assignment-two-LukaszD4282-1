@@ -5,10 +5,10 @@
  */
 package controller;
 
-import com.sd4.model.Beer;
-import com.sd4.model.Brewery;
-import com.sd4.model.Category;
-import com.sd4.model.Style;
+import model.Beer;
+import model.Brewery;
+import model.Category;
+import model.Style;
 import com.sun.istack.NotNull;
 import java.time.Instant;
 import java.util.Date;
@@ -16,6 +16,10 @@ import java.util.List;
 import java.util.Optional;
 import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.Link;
+import org.springframework.hateoas.MediaTypes;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -59,82 +63,51 @@ public class BeerController {
         this.styleService = styleService;
     }
 
-    @GetMapping(value = "/getAllBeers", produces=MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<Beer>> getbeers() {
+    @GetMapping(value = "/getAllBeers", produces = MediaTypes.HAL_JSON_VALUE)
+    public CollectionModel<Beer> getbeers() {
         try {
             List<Beer> beerList = beerService.findAll();
-            if(beerList.isEmpty())
-            {
-                return new ResponseEntity(HttpStatus.NOT_FOUND);
-            }
-            else return ResponseEntity.ok(beerList);
+            
+            beerList.forEach(b -> {
+                long beerID = b.getId();
+                Link selfLink = WebMvcLinkBuilder.linkTo(BeerController.class).slash(beerID).withSelfRel();
+                b.add(selfLink);
+            });
+            
+            Link link  = WebMvcLinkBuilder.linkTo(BeerController.class).withSelfRel();
+            CollectionModel<Beer> result = CollectionModel.of(beerList, link);
+            return result;
+
+           
         } catch (NullPointerException ex) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No beer records found !", ex);
         }
     }
 
-    @GetMapping(value = "getBeer/{id}", produces=MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "getBeer/{id}", produces = MediaTypes.HAL_JSON_VALUE)
     public ResponseEntity<Beer> getbeer(@PathVariable Long id) {
+        System.out.println("In getBeer");
         try {
-             Optional<Beer> b = beerService.findOne(id);
-            if(!b.isPresent())
-            {
+            Optional<Beer> b = beerService.findOne(id);
+            if (!b.isPresent()) {
+                System.out.println("Didnt find beer");
                 return new ResponseEntity(HttpStatus.NOT_FOUND);
+            } else {
+                Link AllBeersLink = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(BeerController.class).getbeers()).withRel("getAllBeers");
+                b.get().add(AllBeersLink);
+                return ResponseEntity.ok(b.get());
             }
-            else return ResponseEntity.ok(b.get());
         } catch (NullPointerException ex) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Beer with ID of " + id + " could not be found !", ex);
         }
     }
 
-    @GetMapping(value = "getStyle/{id}", produces=MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Style> getStyle(@PathVariable Long id) {
-        try {
-             Optional<Style> b = styleService.findOne(id);
-            if(!b.isPresent())
-            {
-                return new ResponseEntity(HttpStatus.NOT_FOUND);
-            }
-            else return ResponseEntity.ok(b.get());
-        } catch (NullPointerException ex) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Style with ID of " + id + " could not be found !", ex);
-        }
-    }
-
-    @GetMapping(value = "getBrewery/{id}", produces=MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Brewery> getBrewery(@PathVariable Long id) {
-        try {
-             Optional<Brewery> b = breweryService.findOne(id);
-            if(!b.isPresent())
-            {
-                return new ResponseEntity(HttpStatus.NOT_FOUND);
-            }
-            else return ResponseEntity.ok(b.get());
-        } catch (NullPointerException ex) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Brewery with ID of " + id + " could not be found !", ex);
-        }
-    }
-
-    @GetMapping(value = "getCategory/{id}", produces=MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Category> getCategory(@PathVariable Long id) {
-        try {
-             Optional<Category> b = categoryService.findOne(id);
-            if(!b.isPresent())
-            {
-                return new ResponseEntity(HttpStatus.NOT_FOUND);
-            }
-            else return ResponseEntity.ok(b.get());
-        } catch (NullPointerException ex) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Category with ID of " + id + " could not be found !", ex);
-        }
-    }
-
-    @PutMapping(value = "updateBeer/{id}", consumes=MediaType.APPLICATION_JSON_VALUE)
+    @PutMapping(value = "updateBeer/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity updateBeer(@PathVariable @NotNull Long id, @RequestBody @Valid Beer beer) {
         try {
             Beer currentBeer = beerService.findOne(id).orElseThrow(RuntimeException::new);
-            
-            currentBeer.setName(beer.getName()); 
+
+            currentBeer.setName(beer.getName());
             currentBeer.setBuy_price(beer.getBuy_price());
             currentBeer.setSell_price(beer.getSell_price());
             currentBeer.setAbv(beer.getAbv());
@@ -142,15 +115,15 @@ public class BeerController {
             currentBeer.setSrm(beer.getSrm());
             currentBeer.setDescription(beer.getDescription());
             currentBeer.setLast_mod(Date.from(java.time.Clock.systemUTC().instant()));
-            
+
             System.out.println(Date.from(java.time.Clock.systemUTC().instant()));
 
             System.out.println(currentBeer);
-            
+
             beerService.saveBeer(currentBeer);
 
             System.out.println(currentBeer);
-            
+
             return ResponseEntity.ok(currentBeer);
         } catch (RuntimeException ex) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Could not update beer with ID of " + id + "!", ex);

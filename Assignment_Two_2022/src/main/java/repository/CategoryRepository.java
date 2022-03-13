@@ -5,7 +5,7 @@
  */
 package repository;
 
-import com.sd4.model.Category;
+import model.Category;
 import org.springframework.data.repository.CrudRepository;
 
 /**

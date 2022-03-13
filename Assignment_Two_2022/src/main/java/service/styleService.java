@@ -6,7 +6,7 @@
 
 package service;
 
-import com.sd4.model.Style;
+import model.Style;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;

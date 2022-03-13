@@ -5,7 +5,7 @@
  */
 package repository;
 
-import com.sd4.model.Brewery;
+import model.Brewery;
 import org.springframework.data.repository.CrudRepository;
 
 /**

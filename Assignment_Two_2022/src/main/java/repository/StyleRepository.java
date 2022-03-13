@@ -5,7 +5,7 @@
  */
 package repository;
 
-import com.sd4.model.Style;
+import model.Style;
 import org.springframework.data.repository.CrudRepository;
 
 /**

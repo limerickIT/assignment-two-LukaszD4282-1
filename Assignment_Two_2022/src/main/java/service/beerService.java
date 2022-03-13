@@ -5,7 +5,7 @@
  */
 package service;
 
-import com.sd4.model.Beer;
+import model.Beer;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
