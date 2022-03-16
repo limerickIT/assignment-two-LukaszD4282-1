@@ -11,6 +11,7 @@ import model.Category;
 import model.Style;
 import com.sun.istack.NotNull;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -67,18 +68,20 @@ public class BeerController {
     public CollectionModel<Beer> getbeers() {
         try {
             List<Beer> beerList = beerService.findAll();
-            
+
             beerList.forEach(b -> {
                 long beerID = b.getId();
                 Link selfLink = WebMvcLinkBuilder.linkTo(BeerController.class).slash(beerID).withSelfRel();
                 b.add(selfLink);
+                
+                Link simpleDataLink = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(BeerController.class).getbeerSimple(b.getId())).withRel("DisplaySimpleBeerData");
+                b.add(simpleDataLink);
             });
-            
-            Link link  = WebMvcLinkBuilder.linkTo(BeerController.class).withSelfRel();
+
+            Link link = WebMvcLinkBuilder.linkTo(BeerController.class).withSelfRel();
             CollectionModel<Beer> result = CollectionModel.of(beerList, link);
             return result;
 
-           
         } catch (NullPointerException ex) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No beer records found !", ex);
         }
@@ -93,12 +96,43 @@ public class BeerController {
                 System.out.println("Didnt find beer");
                 return new ResponseEntity(HttpStatus.NOT_FOUND);
             } else {
+                Link self = WebMvcLinkBuilder.linkTo(BeerController.class).slash(id).withSelfRel();
+                b.get().add(self);
+
                 Link AllBeersLink = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(BeerController.class).getbeers()).withRel("getAllBeers");
                 b.get().add(AllBeersLink);
+
                 return ResponseEntity.ok(b.get());
             }
         } catch (NullPointerException ex) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Beer with ID of " + id + " could not be found !", ex);
+        }
+    }
+
+    @GetMapping(value = "getBeerSimple/{id}", produces = MediaTypes.HAL_JSON_VALUE)
+    public ResponseEntity<List<String>> getbeerSimple(@PathVariable Long id) {
+        System.out.println("In getBeerSimple");
+        
+        Optional<Beer> beer = beerService.findOne(id);
+        
+        try {
+            List<String> simpleData = new ArrayList<>();
+            simpleData.add(beer.get().getName());
+            simpleData.add(beer.get().getDescription());
+            simpleData.add(this.getBrewery(beer.get().getBrewery_id()).getName());
+            
+            return ResponseEntity.ok(simpleData);
+        } catch (NullPointerException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Beer with ID of " + beer.get().getId() + " could not be found !", ex);
+        }
+    }
+
+    @GetMapping("getBrewery/{id}")
+    public Brewery getBrewery(@PathVariable Long id) {
+        try {
+            return breweryService.findOne(id).orElseThrow(NullPointerException::new);
+        } catch (NullPointerException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Brewery with ID of " + id + " could not be found !", ex);
         }
     }
 
