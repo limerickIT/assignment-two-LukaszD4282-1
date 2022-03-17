@@ -27,6 +27,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -36,6 +37,8 @@ import service.beerService;
 import service.breweryService;
 import service.categoryService;
 import service.styleService;
+import com.google.gson.Gson;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  *
@@ -73,7 +76,7 @@ public class BeerController {
                 long beerID = b.getId();
                 Link selfLink = WebMvcLinkBuilder.linkTo(BeerController.class).slash(beerID).withSelfRel();
                 b.add(selfLink);
-                
+
                 Link simpleDataLink = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(BeerController.class).getbeerSimple(b.getId())).withRel("DisplaySimpleBeerData");
                 b.add(simpleDataLink);
             });
@@ -112,15 +115,15 @@ public class BeerController {
     @GetMapping(value = "getBeerSimple/{id}", produces = MediaTypes.HAL_JSON_VALUE)
     public ResponseEntity<List<String>> getbeerSimple(@PathVariable Long id) {
         System.out.println("In getBeerSimple");
-        
+
         Optional<Beer> beer = beerService.findOne(id);
-        
+
         try {
             List<String> simpleData = new ArrayList<>();
             simpleData.add(beer.get().getName());
             simpleData.add(beer.get().getDescription());
             simpleData.add(this.getBrewery(beer.get().getBrewery_id()).getName());
-            
+
             return ResponseEntity.ok(simpleData);
         } catch (NullPointerException ex) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Beer with ID of " + beer.get().getId() + " could not be found !", ex);
@@ -163,4 +166,26 @@ public class BeerController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Could not update beer with ID of " + id + "!", ex);
         }
     }
+
+    @PostMapping(value = "createBeer/", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Beer> createBeer(@RequestBody Beer beerInp) {
+        try {
+            System.out.println(beerInp);
+            System.out.println("Beer before: " + beerInp);
+            
+            if(beerInp == null)
+            {
+                return new ResponseEntity(HttpStatus.NOT_ACCEPTABLE);
+            }
+            else
+            {     
+                beerInp.setLast_mod(Date.from(java.time.Clock.systemUTC().instant()));
+                beerService.saveBeer(beerInp);
+                System.out.println("Beer after: " + beerInp);
+                return new ResponseEntity(HttpStatus.CREATED);
+            }
+        } catch (RuntimeException ex) {
+           throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Could not create beer !", ex);
+        }
+    } 
 }

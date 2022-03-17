@@ -32,7 +32,7 @@ import org.springframework.hateoas.RepresentationModel;
 public class Beer extends RepresentationModel<Beer> {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
     private long brewery_id;
     private String name;
