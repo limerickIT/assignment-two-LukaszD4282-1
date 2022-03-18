@@ -1,6 +1,8 @@
+repository\QRCodeRepository.class
 repository\StyleRepository.class
 service\beerService.class
 repository\BeerRepository.class
+config\BufferedImageConverter.class
 model\Beer.class
 service\breweriesGeocodeService.class
 application\ServletInitializer.class

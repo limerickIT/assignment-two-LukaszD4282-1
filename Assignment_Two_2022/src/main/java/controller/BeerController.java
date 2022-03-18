@@ -5,13 +5,9 @@
  */
 package controller;
 
-import static application.QRGenerator.generateQRcode;
 import model.Beer;
 import model.Brewery;
-import model.Category;
-import model.Style;
 import com.sun.istack.NotNull;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -25,7 +21,6 @@ import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -38,19 +33,16 @@ import service.beerService;
 import service.breweryService;
 import service.categoryService;
 import service.styleService;
-import com.google.gson.Gson;
-import com.google.zxing.EncodeHintType;
+import com.google.zxing.BarcodeFormat;
 import com.google.zxing.WriterException;
-import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
+import com.google.zxing.client.j2se.MatrixToImageWriter;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
 import model.Breweries_Geocode;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import service.breweriesGeocodeService;
 
 /**
@@ -223,24 +215,15 @@ public class BeerController {
         }
     }
 
-    @GetMapping("breweryQR/{id}")
-    @ResponseBody
-    public String showBreweryQR(@PathVariable Long id) throws WriterException, IOException {
+    @GetMapping(value = "breweryQR/{id}", produces = MediaType.IMAGE_PNG_VALUE)
+    public BufferedImage showBreweryQR(@PathVariable Long id) throws WriterException, IOException {
         try {
             Brewery br = this.getBrewery(id);
-            String phoneNoData = "MECARD:N:" + br.getName() + ";ADR:" + br.getAddress1() + " " + br.getAddress2() + ";TEL:" + br.getPhone() + ";EMAIL:" + br.getEmail() + ";URL:" + br.getWebsite() + ";;";
-            String path = System.getProperty("user.dir") + "\\src\\main\\resources\\static\\assets\\images\\large\\display.png";
-            String charset = "UTF-8";
-
-            Map<EncodeHintType, ErrorCorrectionLevel> hashMap = new HashMap<EncodeHintType, ErrorCorrectionLevel>();
-            hashMap.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.L);
-
-            generateQRcode(phoneNoData, path, charset, hashMap, 200, 200);
-            System.out.println("QR Code Generated!!! ");
-
-            return "<img src="
-                    +  System.getProperty("user.dir") + "\\src\\main\\resources\\static\\assets\\images\\large\\display.png"
-                    + "/>";
+            String data = "MECARD:N:" + br.getName() + ";ADR:" + br.getAddress1() + " " + br.getAddress2() + ";TEL:" + br.getPhone() + ";EMAIL:" + br.getEmail() + ";URL:" + br.getWebsite() + ";;";
+            QRCodeWriter qrCodeWriter = new QRCodeWriter();
+		BitMatrix bitMatrix = qrCodeWriter.encode(data, BarcodeFormat.QR_CODE, 250, 250);
+		return MatrixToImageWriter.toBufferedImage(bitMatrix);
+                
         } catch (NullPointerException ex) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Brewery with ID of " + id + " could not be found !", ex);
         }
