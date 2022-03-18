@@ -39,6 +39,10 @@ import service.categoryService;
 import service.styleService;
 import com.google.gson.Gson;
 import javax.servlet.http.HttpServletRequest;
+import model.Breweries_Geocode;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+import service.breweriesGeocodeService;
 
 /**
  *
@@ -60,11 +64,15 @@ public class BeerController {
     @Autowired
     private final styleService styleService;
 
-    public BeerController(beerService beerService, breweryService breweryService, categoryService categoryService, styleService styleService) {
+    @Autowired
+    private final breweriesGeocodeService breweriesGeocodeService;
+
+    public BeerController(beerService beerService, breweryService breweryService, categoryService categoryService, styleService styleService, breweriesGeocodeService breweriesGeocodeService) {
         this.beerService = beerService;
         this.breweryService = breweryService;
         this.categoryService = categoryService;
         this.styleService = styleService;
+        this.breweriesGeocodeService = breweriesGeocodeService;
     }
 
     @GetMapping(value = "/getAllBeers", produces = MediaTypes.HAL_JSON_VALUE)
@@ -139,6 +147,16 @@ public class BeerController {
         }
     }
 
+    @GetMapping("getBreweryGeocode/{id}")
+    public Breweries_Geocode getBreweryGeocode(@PathVariable Long id) {
+        try {
+            System.out.println("In getBreweryGeocode");
+            return breweriesGeocodeService.findOne(id).orElseThrow(NullPointerException::new);
+        } catch (NullPointerException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Brewery with ID of " + id + " could not be found !", ex);
+        }
+    }
+
     @PutMapping(value = "updateBeer/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity updateBeer(@PathVariable @NotNull Long id, @RequestBody @Valid Beer beer) {
         try {
@@ -172,20 +190,79 @@ public class BeerController {
         try {
             System.out.println(beerInp);
             System.out.println("Beer before: " + beerInp);
-            
-            if(beerInp == null)
-            {
+
+            if (beerInp == null) {
                 return new ResponseEntity(HttpStatus.NOT_ACCEPTABLE);
-            }
-            else
-            {     
+            } else {
                 beerInp.setLast_mod(Date.from(java.time.Clock.systemUTC().instant()));
                 beerService.saveBeer(beerInp);
                 System.out.println("Beer after: " + beerInp);
                 return new ResponseEntity(HttpStatus.CREATED);
             }
         } catch (RuntimeException ex) {
-           throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Could not create beer !", ex);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Could not create beer !", ex);
         }
-    } 
+    }
+
+    @DeleteMapping("deleteBeer/{id}")
+    public ResponseEntity<Beer> deleteBeer(@PathVariable Long id) {
+        try {
+            beerService.deleteByID(id);
+            return new ResponseEntity(HttpStatus.OK);
+        } catch (NullPointerException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Beer with ID of " + id + " could not be found !", ex);
+        }
+    }
+
+    @GetMapping("breweryMap/{id}")
+    @ResponseBody
+    public String showBrewery(@PathVariable Long id) {
+        try {
+
+            Breweries_Geocode bc = this.getBreweryGeocode(id);
+            Brewery br = this.getBrewery(id);
+
+            return "<!DOCTYPE html>\n"
+                    + "<html>\n"
+                    + "  <head>\n"
+                    + "    <title>Breweries map</title>\n"
+                    + "  </head>\n"
+                    + "  <body>\n"
+                    + "    <h3>Name of Brewery: " + br.getName() + "</h3>\n"
+                    + "    <h3>Address: " + br.getAddress1() + " " + br.getAddress2() + "</h3>\n"
+                    + "    <!--The div element for the map -->\n"
+                    + "    <div id=\"map\"></div>\n"
+                    + "\n"
+                    + "    <!-- Async script executes immediately and must be after any DOM elements used in callback. -->\n"
+                    + "    <script\n"
+                    + "      src=\"https://maps.googleapis.com/maps/api/js?key=AIzaSyBn4nK-n0-yNcbHYYQlecEGaD5KIzP0sPM&callback=initMap&v=weekly\"\n"
+                    + "      async\n"
+                    + "    ></script>\n"
+                    + "  </body>\n"
+                    + "</html>"
+                    + "<style>/* Set the size of the div element that contains the map */\n"
+                    + "#map {\n"
+                    + "  height: 400px;\n"
+                    + "  /* The height is 400 pixels */\n"
+                    + "  width: 100%;\n"
+                    + "  /* The width is the width of the web page */\n"
+                    + "}</style><script>// Initialize and add the map\n"
+                    + "function initMap() {\n"
+                    + "  // The location of Uluru\n"
+                    + "  const uluru = { lat: " + bc.getLatitude() + ", lng: " + bc.getLongitude() + " };\n"
+                    + "  // The map, centered at Uluru\n"
+                    + "  const map = new google.maps.Map(document.getElementById(\"map\"), {\n"
+                    + "    zoom: 15,\n"
+                    + "    center: uluru,\n"
+                    + "  });\n"
+                    + "  // The marker, positioned at Uluru\n"
+                    + "  const marker = new google.maps.Marker({\n"
+                    + "    position: uluru,\n"
+                    + "    map: map,\n"
+                    + "  });\n"
+                    + "}</script>";
+        } catch (NullPointerException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Not found", ex);
+        }
+    }
 }

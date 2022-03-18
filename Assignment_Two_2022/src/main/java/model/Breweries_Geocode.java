@@ -15,6 +15,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import org.springframework.hateoas.RepresentationModel;
 
 /**
  *
@@ -26,7 +27,7 @@ import lombok.ToString;
 @AllArgsConstructor
 @ToString
 @Entity
-public class Breweries_Geocode implements Serializable {
+public class Breweries_Geocode extends RepresentationModel<Beer> {
     
    @Id
    @GeneratedValue(strategy = GenerationType.IDENTITY)

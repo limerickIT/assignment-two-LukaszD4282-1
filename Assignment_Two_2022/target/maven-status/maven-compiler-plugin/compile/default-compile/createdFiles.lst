@@ -2,6 +2,7 @@ repository\StyleRepository.class
 service\beerService.class
 repository\BeerRepository.class
 model\Beer.class
+service\breweriesGeocodeService.class
 application\ServletInitializer.class
 model\Style.class
 service\categoryService.class
@@ -14,3 +15,4 @@ application\AssignmentTwo2022Application.class
 model\Category.class
 repository\CategoryRepository.class
 service\breweryService.class
+repository\BreweriesGeocodeRepository.class
