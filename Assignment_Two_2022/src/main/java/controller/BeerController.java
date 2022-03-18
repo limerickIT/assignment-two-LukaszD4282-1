@@ -47,8 +47,10 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import model.Breweries_Geocode;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import service.breweriesGeocodeService;
 
 /**
@@ -223,11 +225,11 @@ public class BeerController {
 
     @GetMapping("breweryQR/{id}")
     @ResponseBody
-    public ResponseEntity showBreweryQR(@PathVariable Long id) throws WriterException, IOException {
+    public String showBreweryQR(@PathVariable Long id) throws WriterException, IOException {
         try {
             Brewery br = this.getBrewery(id);
             String phoneNoData = "MECARD:N:" + br.getName() + ";ADR:" + br.getAddress1() + " " + br.getAddress2() + ";TEL:" + br.getPhone() + ";EMAIL:" + br.getEmail() + ";URL:" + br.getWebsite() + ";;";
-            String path = System.getProperty("user.dir") + "/display.png";
+            String path = System.getProperty("user.dir") + "\\src\\main\\resources\\static\\assets\\images\\large\\display.png";
             String charset = "UTF-8";
 
             Map<EncodeHintType, ErrorCorrectionLevel> hashMap = new HashMap<EncodeHintType, ErrorCorrectionLevel>();
@@ -236,7 +238,9 @@ public class BeerController {
             generateQRcode(phoneNoData, path, charset, hashMap, 200, 200);
             System.out.println("QR Code Generated!!! ");
 
-            return new ResponseEntity(HttpStatus.OK);
+            return "<img src="
+                    +  System.getProperty("user.dir") + "\\src\\main\\resources\\static\\assets\\images\\large\\display.png"
+                    + "/>";
         } catch (NullPointerException ex) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Brewery with ID of " + id + " could not be found !", ex);
         }
