@@ -5,6 +5,7 @@
  */
 package controller;
 
+import static application.QRGenerator.generateQRcode;
 import model.Beer;
 import model.Brewery;
 import model.Category;
@@ -38,6 +39,12 @@ import service.breweryService;
 import service.categoryService;
 import service.styleService;
 import com.google.gson.Gson;
+import com.google.zxing.EncodeHintType;
+import com.google.zxing.WriterException;
+import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import model.Breweries_Geocode;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -211,6 +218,27 @@ public class BeerController {
             return new ResponseEntity(HttpStatus.OK);
         } catch (NullPointerException ex) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Beer with ID of " + id + " could not be found !", ex);
+        }
+    }
+
+    @GetMapping("breweryQR/{id}")
+    @ResponseBody
+    public ResponseEntity showBreweryQR(@PathVariable Long id) throws WriterException, IOException {
+        try {
+            Brewery br = this.getBrewery(id);
+            String phoneNoData = "MECARD:N:" + br.getName() + ";ADR:" + br.getAddress1() + " " + br.getAddress2() + ";TEL:" + br.getPhone() + ";EMAIL:" + br.getEmail() + ";URL:" + br.getWebsite() + ";;";
+            String path = System.getProperty("user.dir") + "/display.png";
+            String charset = "UTF-8";
+
+            Map<EncodeHintType, ErrorCorrectionLevel> hashMap = new HashMap<EncodeHintType, ErrorCorrectionLevel>();
+            hashMap.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.L);
+
+            generateQRcode(phoneNoData, path, charset, hashMap, 200, 200);
+            System.out.println("QR Code Generated!!! ");
+
+            return new ResponseEntity(HttpStatus.OK);
+        } catch (NullPointerException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Brewery with ID of " + id + " could not be found !", ex);
         }
     }
 
