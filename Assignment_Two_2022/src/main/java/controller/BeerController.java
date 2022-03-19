@@ -5,6 +5,7 @@
  */
 package controller;
 
+import application.BeerPDFExporter;
 import model.Beer;
 import model.Brewery;
 import com.sun.istack.NotNull;
@@ -38,6 +39,7 @@ import com.google.zxing.WriterException;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
+import com.lowagie.text.DocumentException;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
@@ -45,7 +47,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import javax.servlet.http.HttpServletResponse;
 import model.Breweries_Geocode;
+import model.Category;
+import model.Style;
 import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 import org.apache.commons.io.IOUtils;
@@ -276,11 +283,25 @@ public class BeerController {
         }
     }
 
-     @GetMapping(value = "/generatePdf/{id}")
-    public String getOrderPage(Model model) throws IOException {
-        Order order = OrderHelper.getOrder()
-        model.addAttribute("orderEntry", order);
-        return "order";
+    @GetMapping("/generatePdf/{id}")
+    public void generatePdf(@PathVariable Long id, HttpServletResponse response) throws DocumentException, IOException {
+
+        Beer b = beerService.findOne(id).get();
+        Brewery br = breweryService.findOne(id).get();
+        Category c = categoryService.findOne(id).get();
+        Style s = styleService.findOne(id).get();
+        
+        response.setContentType("application/pdf");
+        DateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
+        String currentDateTime = dateFormatter.format(new Date());
+         
+        String headerKey = "Content-Disposition";
+        String headerValue = "attachment; filename=users_" + currentDateTime + ".pdf";
+        response.setHeader(headerKey, headerValue);
+         
+        BeerPDFExporter exporter = new BeerPDFExporter(b, br, c, s);
+        exporter.export(response);
+
     }
 
     @GetMapping("breweryMap/{id}")

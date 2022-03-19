@@ -23,7 +23,7 @@ import lombok.ToString;
 public class Style implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private Integer id;
+    private long id;
     private int cat_id;
     private String style_name;
 

@@ -68,12 +68,14 @@ public class BeerPDFExporter {
         table.addCell(cell);
     }
 
-    private void writeTableData(PdfPTable table) {
-        table.addCell(String.valueOf(beer.getId()));
+    private void writeTableData(PdfPTable table) throws IOException {
+        
+        Image img = Image.getInstance((System.getProperty("user.dir") + "\\src\\main\\resources\\static\\assets\\images\\thumbs\\") + beer.getImage());
+        
         table.addCell(beer.getName());
         table.addCell(beer.getAbv().toString());
         table.addCell(beer.getDescription());
-        table.addCell(beer.getImage());
+        table.addCell(img);
         table.addCell(beer.getSell_price().toString());
         table.addCell(brewery.getName());
         table.addCell(brewery.getWebsite());
@@ -90,7 +92,7 @@ public class BeerPDFExporter {
         font.setSize(18);
         font.setColor(Color.BLUE);
 
-        Paragraph p = new Paragraph("List of Users", font);
+        Paragraph p = new Paragraph("Beer data", font);
         p.setAlignment(Paragraph.ALIGN_CENTER);
 
         document.add(p);
