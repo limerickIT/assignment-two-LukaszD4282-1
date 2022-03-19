@@ -78,7 +78,7 @@ public class BeerController {
 
     @Autowired
     private final breweriesGeocodeService breweriesGeocodeService;
-    
+
     private final zipService zipService = new zipService();
 
     public BeerController(beerService beerService, breweryService breweryService, categoryService categoryService, styleService styleService, breweriesGeocodeService breweriesGeocodeService) {
@@ -274,6 +274,13 @@ public class BeerController {
         } catch (NullPointerException ex) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Beer with ID of " + id + " could not be found !", ex);
         }
+    }
+
+     @GetMapping(value = "/generatePdf/{id}")
+    public String getOrderPage(Model model) throws IOException {
+        Order order = OrderHelper.getOrder()
+        model.addAttribute("orderEntry", order);
+        return "order";
     }
 
     @GetMapping("breweryMap/{id}")
