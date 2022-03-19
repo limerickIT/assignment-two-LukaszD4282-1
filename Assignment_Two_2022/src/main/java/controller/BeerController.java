@@ -39,11 +39,22 @@ import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
 import model.Breweries_Geocode;
+import net.lingala.zip4j.ZipFile;
+import net.lingala.zip4j.exception.ZipException;
+import org.apache.commons.io.IOUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 import service.breweriesGeocodeService;
+import service.zipService;
 
 /**
  *
@@ -67,6 +78,8 @@ public class BeerController {
 
     @Autowired
     private final breweriesGeocodeService breweriesGeocodeService;
+    
+    private final zipService zipService = new zipService();
 
     public BeerController(beerService beerService, breweryService breweryService, categoryService categoryService, styleService styleService, breweriesGeocodeService breweriesGeocodeService) {
         this.beerService = beerService;
@@ -221,11 +234,45 @@ public class BeerController {
             Brewery br = this.getBrewery(id);
             String data = "MECARD:N:" + br.getName() + ";ADR:" + br.getAddress1() + " " + br.getAddress2() + ";TEL:" + br.getPhone() + ";EMAIL:" + br.getEmail() + ";URL:" + br.getWebsite() + ";;";
             QRCodeWriter qrCodeWriter = new QRCodeWriter();
-		BitMatrix bitMatrix = qrCodeWriter.encode(data, BarcodeFormat.QR_CODE, 250, 250);
-		return MatrixToImageWriter.toBufferedImage(bitMatrix);
-                
+            BitMatrix bitMatrix = qrCodeWriter.encode(data, BarcodeFormat.QR_CODE, 250, 250);
+            return MatrixToImageWriter.toBufferedImage(bitMatrix);
+
         } catch (NullPointerException ex) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Brewery with ID of " + id + " could not be found !", ex);
+        }
+    }
+
+    @GetMapping(value = "/getZip")
+    ResponseEntity<StreamingResponseBody> getZip() throws ZipException {
+
+        ZipFile zipFile = zipService.downloadZipFileWithoutPassword();
+        return ResponseEntity.ok().contentType(MediaType.parseMediaType("application/zip"))
+                .header("Content-Disposition", "attachment; filename=\"BeerImages.zip\"")
+                .body(outputStream -> {
+
+                    try ( OutputStream os = outputStream;  InputStream inputStream = new FileInputStream(zipFile.getFile())) {
+                        IOUtils.copy(inputStream, os);
+                    }
+                });
+
+    }
+
+    @GetMapping(value = "showBeerImage/{imgType}/{id}", produces = MediaType.IMAGE_PNG_VALUE)
+    public ResponseEntity<byte[]> showBeerImage(@PathVariable int imgType, @PathVariable Long id) throws WriterException, IOException {
+        try {
+            String path = null;
+
+            if (imgType == 1) {
+                path = (System.getProperty("user.dir") + "\\src\\main\\resources\\static\\assets\\images\\large\\");
+            } else {
+                path = (System.getProperty("user.dir") + "\\src\\main\\resources\\static\\assets\\images\\thumbs\\");
+            }
+
+            File img = new File(path + id + ".jpg");
+            byte[] image = Files.readAllBytes(img.toPath());
+            return ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).body(image);
+        } catch (NullPointerException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Beer with ID of " + id + " could not be found !", ex);
         }
     }
 

@@ -17,4 +17,5 @@ application\AssignmentTwo2022Application.class
 model\Category.class
 repository\CategoryRepository.class
 service\breweryService.class
+service\zipService.class
 repository\BreweriesGeocodeRepository.class
