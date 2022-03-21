@@ -56,6 +56,10 @@ import model.Style;
 import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 import org.apache.commons.io.IOUtils;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -96,10 +100,12 @@ public class BeerController {
         this.breweriesGeocodeService = breweriesGeocodeService;
     }
 
-    @GetMapping(value = "/getAllBeers", produces = MediaTypes.HAL_JSON_VALUE)
-    public CollectionModel<Beer> getbeers() {
+    @GetMapping(value = "/getAllBeers/{page}", produces = MediaTypes.HAL_JSON_VALUE)
+    public CollectionModel<Beer> getbeers(@PathVariable int page) {
         try {
-            List<Beer> beerList = beerService.findAll();
+            Pageable paging = PageRequest.of(page, 10);
+            Slice<Beer> slicedResult = beerService.findAll(paging);
+            List<Beer> beerList = slicedResult.getContent();
 
             beerList.forEach(b -> {
                 long beerID = b.getId();
@@ -119,27 +125,6 @@ public class BeerController {
         }
     }
 
-    @GetMapping(value = "getBeer/{id}", produces = MediaTypes.HAL_JSON_VALUE)
-    public ResponseEntity<Beer> getbeer(@PathVariable Long id) {
-        System.out.println("In getBeer");
-        try {
-            Optional<Beer> b = beerService.findOne(id);
-            if (!b.isPresent()) {
-                System.out.println("Didnt find beer");
-                return new ResponseEntity(HttpStatus.NOT_FOUND);
-            } else {
-                Link self = WebMvcLinkBuilder.linkTo(BeerController.class).slash(id).withSelfRel();
-                b.get().add(self);
-
-                Link AllBeersLink = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(BeerController.class).getbeers()).withRel("getAllBeers");
-                b.get().add(AllBeersLink);
-
-                return ResponseEntity.ok(b.get());
-            }
-        } catch (NullPointerException ex) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Beer with ID of " + id + " could not be found !", ex);
-        }
-    }
 
     @GetMapping(value = "getBeerSimple/{id}", produces = MediaTypes.HAL_JSON_VALUE)
     public ResponseEntity<List<String>> getbeerSimple(@PathVariable Long id) {

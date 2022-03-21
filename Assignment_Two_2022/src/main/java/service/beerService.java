@@ -9,6 +9,8 @@ import model.Beer;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import repository.BeerRepository;
 
@@ -26,8 +28,8 @@ public class beerService {
         return BeerRepo.findById(id);
     }
 
-    public List<Beer> findAll() {
-        return (List<Beer>) BeerRepo.findAll();
+    public Slice<Beer> findAll(Pageable p) {
+        return (Slice<Beer>) BeerRepo.findAll(p);
     }
 
     public long count() {
