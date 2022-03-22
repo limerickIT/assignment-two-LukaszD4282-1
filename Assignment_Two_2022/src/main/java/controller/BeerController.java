@@ -125,6 +125,13 @@ public class BeerController {
         }
     }
 
+    public Brewery getBrewery(@PathVariable Long id) {
+        try {
+            return breweryService.findOne(id).orElseThrow(NullPointerException::new);
+        } catch (NullPointerException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Brewery with ID of " + id + " could not be found !", ex);
+        }
+    }
 
     @GetMapping(value = "getBeerSimple/{id}", produces = MediaTypes.HAL_JSON_VALUE)
     public ResponseEntity<List<String>> getbeerSimple(@PathVariable Long id) {
@@ -141,25 +148,6 @@ public class BeerController {
             return ResponseEntity.ok(simpleData);
         } catch (NullPointerException ex) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Beer with ID of " + beer.get().getId() + " could not be found !", ex);
-        }
-    }
-
-    @GetMapping("getBrewery/{id}")
-    public Brewery getBrewery(@PathVariable Long id) {
-        try {
-            return breweryService.findOne(id).orElseThrow(NullPointerException::new);
-        } catch (NullPointerException ex) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Brewery with ID of " + id + " could not be found !", ex);
-        }
-    }
-
-    @GetMapping("getBreweryGeocode/{id}")
-    public Breweries_Geocode getBreweryGeocode(@PathVariable Long id) {
-        try {
-            System.out.println("In getBreweryGeocode");
-            return breweriesGeocodeService.findOne(id).orElseThrow(NullPointerException::new);
-        } catch (NullPointerException ex) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Brewery with ID of " + id + " could not be found !", ex);
         }
     }
 
@@ -220,20 +208,6 @@ public class BeerController {
         }
     }
 
-    @GetMapping(value = "breweryQR/{id}", produces = MediaType.IMAGE_PNG_VALUE)
-    public BufferedImage showBreweryQR(@PathVariable Long id) throws WriterException, IOException {
-        try {
-            Brewery br = this.getBrewery(id);
-            String data = "MECARD:N:" + br.getName() + ";ADR:" + br.getAddress1() + " " + br.getAddress2() + ";TEL:" + br.getPhone() + ";EMAIL:" + br.getEmail() + ";URL:" + br.getWebsite() + ";;";
-            QRCodeWriter qrCodeWriter = new QRCodeWriter();
-            BitMatrix bitMatrix = qrCodeWriter.encode(data, BarcodeFormat.QR_CODE, 250, 250);
-            return MatrixToImageWriter.toBufferedImage(bitMatrix);
-
-        } catch (NullPointerException ex) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Brewery with ID of " + id + " could not be found !", ex);
-        }
-    }
-
     @GetMapping(value = "/getZip")
     ResponseEntity<StreamingResponseBody> getZip() throws ZipException {
 
@@ -275,69 +249,18 @@ public class BeerController {
         Brewery br = breweryService.findOne(id).get();
         Category c = categoryService.findOne(id).get();
         Style s = styleService.findOne(id).get();
-        
+
         response.setContentType("application/pdf");
         DateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
         String currentDateTime = dateFormatter.format(new Date());
-         
+
         String headerKey = "Content-Disposition";
         String headerValue = "attachment; filename=users_" + currentDateTime + ".pdf";
         response.setHeader(headerKey, headerValue);
-         
+
         BeerPDFExporter exporter = new BeerPDFExporter(b, br, c, s);
         exporter.export(response);
 
     }
 
-    @GetMapping("breweryMap/{id}")
-    @ResponseBody
-    public String showBrewery(@PathVariable Long id) {
-        try {
-
-            Breweries_Geocode bc = this.getBreweryGeocode(id);
-            Brewery br = this.getBrewery(id);
-
-            return "<!DOCTYPE html>\n"
-                    + "<html>\n"
-                    + "  <head>\n"
-                    + "    <title>Breweries map</title>\n"
-                    + "  </head>\n"
-                    + "  <body>\n"
-                    + "    <h3>Name of Brewery: " + br.getName() + "</h3>\n"
-                    + "    <h3>Address: " + br.getAddress1() + " " + br.getAddress2() + "</h3>\n"
-                    + "    <!--The div element for the map -->\n"
-                    + "    <div id=\"map\"></div>\n"
-                    + "\n"
-                    + "    <!-- Async script executes immediately and must be after any DOM elements used in callback. -->\n"
-                    + "    <script\n"
-                    + "      src=\"https://maps.googleapis.com/maps/api/js?key=AIzaSyBn4nK-n0-yNcbHYYQlecEGaD5KIzP0sPM&callback=initMap&v=weekly\"\n"
-                    + "      async\n"
-                    + "    ></script>\n"
-                    + "  </body>\n"
-                    + "</html>"
-                    + "<style>/* Set the size of the div element that contains the map */\n"
-                    + "#map {\n"
-                    + "  height: 400px;\n"
-                    + "  /* The height is 400 pixels */\n"
-                    + "  width: 100%;\n"
-                    + "  /* The width is the width of the web page */\n"
-                    + "}</style><script>// Initialize and add the map\n"
-                    + "function initMap() {\n"
-                    + "  // The location of Uluru\n"
-                    + "  const uluru = { lat: " + bc.getLatitude() + ", lng: " + bc.getLongitude() + " };\n"
-                    + "  // The map, centered at Uluru\n"
-                    + "  const map = new google.maps.Map(document.getElementById(\"map\"), {\n"
-                    + "    zoom: 15,\n"
-                    + "    center: uluru,\n"
-                    + "  });\n"
-                    + "  // The marker, positioned at Uluru\n"
-                    + "  const marker = new google.maps.Marker({\n"
-                    + "    position: uluru,\n"
-                    + "    map: map,\n"
-                    + "  });\n"
-                    + "}</script>";
-        } catch (NullPointerException ex) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Not found", ex);
-        }
-    }
 }

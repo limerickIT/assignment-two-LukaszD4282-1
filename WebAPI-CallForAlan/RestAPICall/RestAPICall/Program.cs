@@ -16,12 +16,13 @@ namespace RestAPICall
         static int beerID = 1;
         static void Main(string[] args)
         {
+            getBeerData();
             insertBeer();
         }
 
         public static void getBeerData()
         {
-            string strurl = String.Format("http://localhost:8888/beers/getBeer/" + beerID + "/");
+            string strurl = String.Format("http://localhost:8888/beers/getBeerSimple/" + beerID + "/");
             //Console.WriteLine("CALL: " + strurl);
             WebRequest requestObject = WebRequest.Create(strurl);
             requestObject.Method = "GET";
@@ -66,8 +67,6 @@ namespace RestAPICall
                 {
                     var result = streamReader.ReadToEnd();
                 }
-
-                    Console.WriteLine("\nJSON result:\n");
                 Console.WriteLine(strResult + "\n");
             }
         }

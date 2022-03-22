@@ -14,7 +14,6 @@ model\Brewery.class
 repository\BreweryRepository.class
 service\styleService.class
 controller\BeerController.class
-application\AssignmentTwo2022Application.class
 model\Category.class
 repository\CategoryRepository.class
 service\breweryService.class
