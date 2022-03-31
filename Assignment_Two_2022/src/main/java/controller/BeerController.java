@@ -100,7 +100,7 @@ public class BeerController {
         this.breweriesGeocodeService = breweriesGeocodeService;
     }
 
-    @GetMapping(value = "/getAllBeers/{page}", produces = MediaTypes.HAL_JSON_VALUE)
+    @GetMapping(value = "getAllBeers/{page}", produces = MediaTypes.HAL_JSON_VALUE)
     public CollectionModel<Beer> getbeers(@PathVariable int page) {
         try {
             Pageable paging = PageRequest.of(page, 10);
@@ -109,14 +109,14 @@ public class BeerController {
 
             beerList.forEach(b -> {
                 long beerID = b.getId();
-                Link selfLink = WebMvcLinkBuilder.linkTo(BeerController.class).slash(beerID).withSelfRel();
+                Link selfLink = WebMvcLinkBuilder.linkTo(BeerController.class).slash("getBeer/"+ beerID).withSelfRel();
                 b.add(selfLink);
 
                 Link simpleDataLink = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(BeerController.class).getbeerSimple(b.getId())).withRel("DisplaySimpleBeerData");
                 b.add(simpleDataLink);
             });
 
-            Link link = WebMvcLinkBuilder.linkTo(BeerController.class).withSelfRel();
+            Link link = WebMvcLinkBuilder.linkTo(BeerController.class).slash("getAllBeers/" + page).withSelfRel();
             CollectionModel<Beer> result = CollectionModel.of(beerList, link);
             return result;
 
@@ -221,6 +221,28 @@ public class BeerController {
                     }
                 });
 
+    }
+    
+    @GetMapping(value = "getBeer/{id}", produces = MediaTypes.HAL_JSON_VALUE)
+    public ResponseEntity<Beer> getbeer(@PathVariable Long id) {
+        System.out.println("In getBeer");
+        try {
+            Optional<Beer> b = beerService.findOne(id);
+            if (!b.isPresent()) {
+                System.out.println("Didnt find beer");
+                return new ResponseEntity(HttpStatus.NOT_FOUND);
+            } else {
+                Link self = WebMvcLinkBuilder.linkTo(BeerController.class).slash("getBeer/" + id).withSelfRel();
+                b.get().add(self);
+
+                Link AllBeersLink = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(BeerController.class).getbeers(0)).withRel("getAllBeers");
+                b.get().add(AllBeersLink);
+
+                return ResponseEntity.ok(b.get());
+            }
+        } catch (NullPointerException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Beer with ID of " + id + " could not be found !", ex);
+        }
     }
 
     @GetMapping(value = "showBeerImage/{imgType}/{id}", produces = MediaType.IMAGE_PNG_VALUE)
