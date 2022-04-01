@@ -179,8 +179,8 @@ public class BeerController {
         }
     }
 
-    @PostMapping(value = "createBeer/", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Beer> createBeer(@RequestBody Beer beerInp) {
+    @PostMapping(value = "createBeer/", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Beer> createBeer(@RequestBody @Valid Beer beerInp) {
         try {
             System.out.println(beerInp);
             System.out.println("Beer before: " + beerInp);

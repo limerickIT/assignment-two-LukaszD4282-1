@@ -45,7 +45,7 @@ namespace RestAPICall
         public static void insertBeer()
         {
             Random rnd = new Random();
-            Beer nb = new Beer(812,"New beer", 11, 116, 5, 4.6, 2.5, 5, 7, 0, "New description");
+            Beer nb = new Beer(9000,"New beer", 11, 116, 5, 4.6, 2.5, 5, 7, 0, "New description");
             string postData = JsonSerializer.Serialize<Beer>(nb);
 
             string strurl = "http://localhost:8888/beers/createBeer/";
