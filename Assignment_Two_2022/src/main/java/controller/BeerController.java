@@ -109,7 +109,7 @@ public class BeerController {
 
             beerList.forEach(b -> {
                 long beerID = b.getId();
-                Link selfLink = WebMvcLinkBuilder.linkTo(BeerController.class).slash("getBeer/"+ beerID).withSelfRel();
+                Link selfLink = WebMvcLinkBuilder.linkTo(BeerController.class).slash("getBeer/" + beerID).withSelfRel();
                 b.add(selfLink);
 
                 Link simpleDataLink = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(BeerController.class).getbeerSimple(b.getId())).withRel("DisplaySimpleBeerData");
@@ -216,13 +216,13 @@ public class BeerController {
                 .header("Content-Disposition", "attachment; filename=\"BeerImages.zip\"")
                 .body(outputStream -> {
 
-                    try ( OutputStream os = outputStream;  InputStream inputStream = new FileInputStream(zipFile.getFile())) {
+                    try (OutputStream os = outputStream; InputStream inputStream = new FileInputStream(zipFile.getFile())) {
                         IOUtils.copy(inputStream, os);
                     }
                 });
 
     }
-    
+
     @GetMapping(value = "getBeer/{id}", produces = MediaTypes.HAL_JSON_VALUE)
     public ResponseEntity<Beer> getbeer(@PathVariable Long id) {
         System.out.println("In getBeer");
@@ -252,11 +252,16 @@ public class BeerController {
 
             if (imgType == 1) {
                 path = (System.getProperty("user.dir") + "\\src\\main\\resources\\static\\assets\\images\\large\\");
-            } else {
+            } else if (imgType == 2) {
                 path = (System.getProperty("user.dir") + "\\src\\main\\resources\\static\\assets\\images\\thumbs\\");
             }
 
-            File img = new File(path + id + ".jpg");
+            Optional<Beer> b = beerService.findOne(id);
+            File img;
+
+            System.out.println(b.get().getImage());
+
+            img = new File(path + b.get().getImage());
             byte[] image = Files.readAllBytes(img.toPath());
             return ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).body(image);
         } catch (NullPointerException ex) {
